@@ -21,6 +21,7 @@ const [retryCount, setRetryCount] = useState(maxRetries);
 // Add isGenerating state
 
 const [isGenerating, setIsGenerating] = useState(false);
+  const [finalPrompt, setFinalPrompt] = useState('');
   // rest of code
   // Add this function
 
@@ -30,52 +31,80 @@ const [isGenerating, setIsGenerating] = useState(false);
 
   };
   const generateAction = async () => {
-  console.log('Generating...');
 
-  // Add this check to make sure there is no double click
-  if (isGenerating && retry === 0) return;
+    console.log('Generating...');
 
-  // Set loading has started
-  setIsGenerating(true);
+    if (isGenerating && retry === 0) return;
 
-  if (retry > 0) {
-    setRetryCount((prevState) => {
-      if (prevState === 0) {
-        return 0;
-      } else {
-        return prevState - 1;
-      }
+    setIsGenerating(true);
+
+    if (retry > 0) {
+
+      setRetryCount((prevState) => {
+
+        if (prevState === 0) {
+
+          return 0;
+
+        } else {
+
+          return prevState - 1;
+
+        }
+
+      });
+
+      setRetry(0);
+
+    }
+
+    const response = await fetch('/api/generate', {
+
+      method: 'POST',
+
+      headers: {
+
+        'Content-Type': 'image/jpeg',
+
+      },
+
+      body: JSON.stringify({ input }),
+
     });
 
-    setRetry(0);
-  }
+    const data = await response.json();
 
-  const response = await fetch('/api/generate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'image/jpeg',
-    },
-    body: JSON.stringify({ input }),
-  });
+    if (response.status === 503) {
 
-  const data = await response.json();
+      setRetry(data.estimated_time);
 
-  if (response.status === 503) {
-    setRetry(data.estimated_time);
-    return;
-  }
+      return;
 
-  if (!response.ok) {
-    console.log(`Error: ${data.error}`);
-    // Stop loading
+    }
+
+    if (!response.ok) {
+
+      console.log(`Error: ${data.error}`);
+
+      setIsGenerating(false);
+
+      return;
+
+    }
+
+    // Set final prompt here
+
+    setFinalPrompt(input);
+
+    // Remove content from input box
+
+    setInput('');
+
+    setImg(data.image);
+
     setIsGenerating(false);
-    return;
-  }
 
-  setImg(data.image);
-  // Everything is all done -- stop loading!
-  setIsGenerating(false);
-};
+  };
   const sleep = (ms) => {
 
   return new Promise((resolve) => {
@@ -121,87 +150,109 @@ const [isGenerating, setIsGenerating] = useState(false);
 
     <div className="root">
 
-      <Head>
+  <Head>
 
-        {/* Add one-liner here */}
+    <title>Silly picture generator | buildspace</title>
 
-        <title>Silly picture generator | buildspace</title>
+  </Head>
 
-      </Head>
+  <div className="container">
 
-      <div className="container">
+    <div className="header">
 
-        <div className="header">
+      <div className="header-title">
 
-          <div className="header-title">
+        <h1>Silly picture generator</h1>
 
-            {/* Add one-liner here */}
-
-            <h1>Silly picture generator</h1>
-
-          </div>
-
-          <div className="header-subtitle">
-
-            {/* Add description here */}
-
-            <h2>
-
-              Turn me into anyone you want! Make sure you refer to me as "abraza" in the prompt
-
-            </h2>
-
-          </div>
-           <div className="prompt-container">
-  <input className="prompt-box" value={input} onChange={onChange} />
-  <div className="prompt-buttons">
-    {/* Tweak classNames to change classes */}
-    <a
-      className={
-        isGenerating ? 'generate-button loading' : 'generate-button'
-      }
-      onClick={generateAction}
-    >
-      {/* Tweak to show a loading indicator */}
-      <div className="generate">
-        {isGenerating ? (
-          <span className="loader"></span>
-        ) : (
-          <p>Generate</p>
-        )}
       </div>
-    </a>
-  </div>
-</div>
+
+      <div className="header-subtitle">
+
+        <h2>
+
+          Turn me into anyone you want! Make sure you refer to me as "abraza" in the prompt
+
+        </h2>
+
+      </div>
+
+      <div className="prompt-container">
+
+        <input className="prompt-box" value={input} onChange={onChange} />
+
+        <div className="prompt-buttons">
+
+          <a
+
+            className={
+
+              isGenerating ? 'generate-button loading' : 'generate-button'
+
+            }
+
+            onClick={generateAction}
+
+          >
+
+            <div className="generate">
+
+              {isGenerating ? (
+
+                <span className="loader"></span>
+
+              ) : (
+
+                <p>Generate</p>
+
+              )}
+
+            </div>
+
+          </a>
+
         </div>
 
       </div>
 
-      <div className="badge-container grow">
+    </div>
 
-        <a
+    {/* Add output container */}
 
-          href="https://buildspace.so/builds/ai-avatar"
+    {img && (
+  <div className="output-content">
+    <Image src={img} width={512} height={512} alt={finalPrompt} />
+    {/* Add prompt here */}
+    <p>{finalPrompt}</p>
+  </div>
+)}
 
-          target="_blank"
+  </div>
 
-          rel="noreferrer"
+  <div className="badge-container grow">
 
-        >
+    <a
 
-          <div className="badge">
+      href="https://buildspace.so/builds/ai-avatar"
 
-            <Image src={buildspaceLogo} alt="buildspace logo" />
+      target="_blank"
 
-            <p>build with buildspace</p>
+      rel="noreferrer"
 
-          </div>
+    >
 
-        </a>
+      <div className="badge">
+
+        <Image src={buildspaceLogo} alt="buildspace logo" />
+
+        <p>build with buildspace</p>
 
       </div>
 
-    </div>
+    </a>
+
+  </div>
+
+</div>
 
   );
 
