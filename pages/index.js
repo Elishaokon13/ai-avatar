@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 const Home = () => {
 // Create state property
-
+  const [img, setImg] = useState('');
   const [input, setInput] = useState('');
   // Add this function
 
@@ -19,8 +19,6 @@ const Home = () => {
   const generateAction = async () => {
 
   console.log('Generating...');
-
-  // Add the fetch request
 
   const response = await fetch('/api/generate', {
 
@@ -36,7 +34,32 @@ const Home = () => {
 
   });
 
+  
+
   const data = await response.json();
+
+  // If model still loading, drop that retry time
+
+  if (response.status === 503) {
+
+    console.log('Model is loading still :(.')
+
+    return;
+
+  }
+
+  // If another error, drop error
+
+  if (!response.ok) {
+
+    console.log(`Error: ${data.error}`);
+
+    return;
+
+  }
+    // Set image data into state property
+
+  setImg(data.image);
 
 };
   return (
