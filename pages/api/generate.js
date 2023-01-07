@@ -17,10 +17,12 @@ const generateAction = async (req, res) => {
     }
   );
 
-  // Check for different statuses to send proper payload
   if (response.ok) {
     const buffer = await response.buffer();
-    res.status(200).json({ image: buffer });
+    // Convert to base64
+    const base64 = bufferToBase64(buffer);
+    // Make sure to change to base64
+    res.status(200).json({ image: base64 });
   } else if (response.status === 503) {
     const json = await response.json();
     res.status(503).json(json);
@@ -30,10 +32,4 @@ const generateAction = async (req, res) => {
   }
 };
 
-const bufferToBase64 = (buffer) => {
-
-  const base64 = buffer.toString('base64');
-
-  return `data:image/png;base64,${base64}`;
-
-};
+export default generateAction;
