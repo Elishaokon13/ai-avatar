@@ -82,15 +82,33 @@ const [isGenerating, setIsGenerating] = useState(false);
 
     }
 
-    if (!response.ok) {
+    if (response.ok) {
 
-      console.log(`Error: ${data.error}`);
+    const buffer = await response.buffer();
 
-      setIsGenerating(false);
+    // Convert to base64
 
-      return;
+    const base64 = bufferToBase64(buffer);
 
-    }
+    // Make sure to change to base64
+
+    res.status(200).json({ image: base64 });
+
+  } else if (response.status === 503) {
+
+    const json = await response.json();
+
+    res.status(503).json(json);
+
+  } else {
+
+    const json = await response.json();
+
+    res.status(response.status).json({ error: response.statusText });
+
+  }
+
+};
 
     // Set final prompt here
 
