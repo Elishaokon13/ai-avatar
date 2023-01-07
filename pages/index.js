@@ -3,12 +3,25 @@ import Image from 'next/image';
 import buildspaceLogo from '../assets/buildspace-logo.png';
 // Add useState import to top of file
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Home = () => {
-// Create state property
-  const [img, setImg] = useState('');
-  const [input, setInput] = useState('');
+  // Don't retry more than 20 times
+
+  const maxRetries = 20;
+
+const [input, setInput] = useState('');
+
+const [img, setImg] = useState('');
+
+const [retry, setRetry] = useState(0);
+
+const [retryCount, setRetryCount] = useState(maxRetries);
+
+// Add isGenerating state
+
+const [isGenerating, setIsGenerating] = useState(false);
+  // rest of code
   // Add this function
 
   const onChange = (event) => {
@@ -18,50 +31,108 @@ const Home = () => {
   };
   const generateAction = async () => {
 
-  console.log('Generating...');
+    console.log('Generating...');
 
-  const response = await fetch('/api/generate', {
+    // If this is a retry request, take away retryCount
 
-    method: 'POST',
+    if (retry > 0) {
 
-    headers: {
+      setRetryCount((prevState) => {
 
-      'Content-Type': 'image/jpeg',
+        if (prevState === 0) {
 
-    },
+          return 0;
 
-    body: JSON.stringify({ input }),
+        } else {
+
+          return prevState - 1;
+
+        }
+
+      });
+
+      setRetry(0);
+
+    }
+
+    const response = await fetch('/api/generate', {
+
+      method: 'POST',
+
+      headers: {
+
+        'Content-Type': 'image/jpeg',
+
+      },
+
+      body: JSON.stringify({ input }),
+
+    });
+
+    const data = await response.json();
+
+    if (response.status === 503) {
+
+      // Set the estimated_time property in state
+
+      setRetry(data.estimated_time);
+
+      return;
+
+    }
+
+    if (!response.ok) {
+
+      console.log(`Error: ${data.error}`);
+
+      return;
+
+    }
+
+    setImg(data.image);
+
+  };
+  const sleep = (ms) => {
+
+  return new Promise((resolve) => {
+
+    setTimeout(resolve, ms);
 
   });
 
-  
-
-  const data = await response.json();
-
-  // If model still loading, drop that retry time
-
-  if (response.status === 503) {
-
-    console.log('Model is loading still :(.')
-
-    return;
-
-  }
-
-  // If another error, drop error
-
-  if (!response.ok) {
-
-    console.log(`Error: ${data.error}`);
-
-    return;
-
-  }
-    // Set image data into state property
-
-  setImg(data.image);
-
 };
+  
+  useEffect(() => {
+
+    const runRetry = async () => {
+
+      if (retryCount === 0) {
+
+        console.log(`Model still loading after ${maxRetries} retries. Try request again in 5 minutes.`);
+
+        setRetryCount(maxRetries);
+
+        return;
+
+        }
+
+      console.log(`Trying again in ${retry} seconds.`);
+
+      await sleep(retry * 1000);
+
+      await generateAction();
+
+    };
+
+    if (retry === 0) {
+
+      return;
+
+    }
+
+    runRetry();
+
+  }, [retry]);
   return (
 
     <div className="root">
