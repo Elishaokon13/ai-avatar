@@ -18,9 +18,27 @@ const Home = () => {
   };
   const generateAction = async () => {
 
-    console.log('Generating...');	
+  console.log('Generating...');
 
-  }
+  // Add the fetch request
+
+  const response = await fetch('/api/generate', {
+
+    method: 'POST',
+
+    headers: {
+
+      'Content-Type': 'image/jpeg',
+
+    },
+
+    body: JSON.stringify({ input }),
+
+  });
+
+  const data = await response.json();
+
+};
   return (
 
     <div className="root">
