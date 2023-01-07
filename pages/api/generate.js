@@ -29,3 +29,11 @@ const generateAction = async (req, res) => {
     res.status(response.status).json({ error: response.statusText });
   }
 };
+
+const bufferToBase64 = (buffer) => {
+
+  const base64 = buffer.toString('base64');
+
+  return `data:image/png;base64,${base64}`;
+
+};
