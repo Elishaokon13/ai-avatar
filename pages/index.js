@@ -107,7 +107,22 @@ const [isGenerating, setIsGenerating] = useState(false);
     res.status(response.status).json({ error: response.statusText });
 
   }
+ 
+    const finalInput = input.replace(/raza/gi, 'abraza');
 
+const response = await fetch('/api/generate', {
+
+  method: 'POST',
+
+  headers: {
+
+    'Content-Type': 'image/jpeg',
+
+  },
+
+  body: JSON.stringify({ input: finalInput }),
+
+});
 };
 
     // Set final prompt here
