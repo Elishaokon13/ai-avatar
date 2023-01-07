@@ -30,68 +30,52 @@ const [isGenerating, setIsGenerating] = useState(false);
 
   };
   const generateAction = async () => {
+  console.log('Generating...');
 
-    console.log('Generating...');
+  // Add this check to make sure there is no double click
+  if (isGenerating && retry === 0) return;
 
-    // If this is a retry request, take away retryCount
+  // Set loading has started
+  setIsGenerating(true);
 
-    if (retry > 0) {
-
-      setRetryCount((prevState) => {
-
-        if (prevState === 0) {
-
-          return 0;
-
-        } else {
-
-          return prevState - 1;
-
-        }
-
-      });
-
-      setRetry(0);
-
-    }
-
-    const response = await fetch('/api/generate', {
-
-      method: 'POST',
-
-      headers: {
-
-        'Content-Type': 'image/jpeg',
-
-      },
-
-      body: JSON.stringify({ input }),
-
+  if (retry > 0) {
+    setRetryCount((prevState) => {
+      if (prevState === 0) {
+        return 0;
+      } else {
+        return prevState - 1;
+      }
     });
 
-    const data = await response.json();
+    setRetry(0);
+  }
 
-    if (response.status === 503) {
+  const response = await fetch('/api/generate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'image/jpeg',
+    },
+    body: JSON.stringify({ input }),
+  });
 
-      // Set the estimated_time property in state
+  const data = await response.json();
 
-      setRetry(data.estimated_time);
+  if (response.status === 503) {
+    setRetry(data.estimated_time);
+    return;
+  }
 
-      return;
+  if (!response.ok) {
+    console.log(`Error: ${data.error}`);
+    // Stop loading
+    setIsGenerating(false);
+    return;
+  }
 
-    }
-
-    if (!response.ok) {
-
-      console.log(`Error: ${data.error}`);
-
-      return;
-
-    }
-
-    setImg(data.image);
-
-  };
+  setImg(data.image);
+  // Everything is all done -- stop loading!
+  setIsGenerating(false);
+};
   const sleep = (ms) => {
 
   return new Promise((resolve) => {
@@ -169,25 +153,25 @@ const [isGenerating, setIsGenerating] = useState(false);
 
           </div>
            <div className="prompt-container">
-
   <input className="prompt-box" value={input} onChange={onChange} />
-
-  {/* Add your prompt button in the prompt container */}
-
   <div className="prompt-buttons">
-
-    <a className="generate-button" onClick={generateAction}>
-
+    {/* Tweak classNames to change classes */}
+    <a
+      className={
+        isGenerating ? 'generate-button loading' : 'generate-button'
+      }
+      onClick={generateAction}
+    >
+      {/* Tweak to show a loading indicator */}
       <div className="generate">
-
-        <p>Generate</p>
-
+        {isGenerating ? (
+          <span className="loader"></span>
+        ) : (
+          <p>Generate</p>
+        )}
       </div>
-
     </a>
-
   </div>
-
 </div>
         </div>
 
